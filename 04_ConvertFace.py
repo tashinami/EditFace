@@ -68,22 +68,23 @@ if __name__ == "__main__":
     os.makedirs('results', exist_ok=True)
 
     ext_list = ["jpg", "png", "jpeg"]
-    image_list = sorted(list(chain.from_iterable([glob.glob(os.path.join("./images", "*." + ext)) for ext in ext_list])))
+    smile_image_list = sorted(list(chain.from_iterable([glob.glob(os.path.join("./smiled", "*." + ext)) for ext in ext_list])))
 
-    for i, filepath in enumerate(tqdm(image_list)):
+    for i, smile_image_path in enumerate(tqdm(smile_image_list)):
+        origin_image_path = os.path.splitext(os.path.basename(smile_image_path))[0]
+        origin_image_path += ".png"
+        origin_image_path = os.path.join("./images/", origin_image_path)
+
         # 元画像の読み込み
-        img = PIL.Image.open(filepath)
-        origin_image = cv2.imread(filepath)
+        img = PIL.Image.open(origin_image_path)
+        origin_image = cv2.imread(origin_image_path)
 
         # ランドマーク検出 & クロップ情報の取得
-        lm = get_landmark(filepath, predictor)
+        lm = get_landmark(origin_image_path, predictor)
         quad, crop, pad = get_align_info(lm, img)
 
         # 笑顔変換した画像の読み込み
-        smile_image_name = os.path.splitext(os.path.basename(filepath))[0]
-        smile_image_name += ".png"
-        smile_image_name = os.path.join("./smiled/", smile_image_name)
-        smile_image = cv2.imread(smile_image_name)
+        smile_image = cv2.imread(smile_image_path)
         smile_height, smile_width = smile_image.shape[:2]
 
         # 射影変換行列を取得
@@ -93,7 +94,7 @@ if __name__ == "__main__":
         perspective_mat = cv2.getPerspectiveTransform(np.float32(pts_src), np.float32(pts_dst))
 
         # 笑顔画像のマスク生成
-        mask_image = generate_face_mask(smile_image_name)
+        mask_image = generate_face_mask(smile_image_path)
 
         # マスク画像を参照してアルファ合成する
         smiled_origin_image = origin_image.copy()
@@ -122,7 +123,7 @@ if __name__ == "__main__":
                         smiled_origin_image[inv_xy[1], inv_xy[0]] = smile_pix * alpha + origin_pix * (1.0 - alpha)
 
 
-        image_name = os.path.splitext(os.path.basename(filepath))[0]
+        image_name = os.path.splitext(os.path.basename(smile_image_path))[0]
         image_name += ".png"
         output_path = os.path.join("./results/", image_name)
         cv2.imwrite(output_path, smiled_origin_image)
