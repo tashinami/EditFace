@@ -96,7 +96,7 @@ def get_align_info(lm, img):
         img = PIL.Image.fromarray(np.uint8(np.clip(np.rint(img), 0, 255)), 'RGB')
         quad += pad[:2]
 
-    return quad, crop, pad
+    return quad, img, crop, pad
 
 
 
@@ -109,7 +109,7 @@ def align_face(filepath, predictor):
     img = PIL.Image.open(filepath)
 
     lm = get_landmark(filepath, predictor)
-    quad, _, _ = get_align_info(lm, img)
+    quad, img, _, _ = get_align_info(lm, img)
 
     # アフィン変換
     img = img.transform((transform_size, transform_size), PIL.Image.QUAD, (quad + 0.5).flatten(), PIL.Image.BILINEAR)

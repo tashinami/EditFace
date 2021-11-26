@@ -1,4 +1,5 @@
 import os
+import cv2
 import gdown
 import shutil
 import numpy as np 
@@ -14,8 +15,6 @@ from manipulate import Manipulator
 pt_name = '003.pt' #@param {type:"string"}
 
 if __name__ == "__main__":
-    os.makedirs('smiled', exist_ok=True)
-
     # 学習済みパラメータのダウンロード
     model_path = 'data_sc.zip'  
     if not os.path.exists(model_path):
@@ -54,15 +53,26 @@ if __name__ == "__main__":
     # --- alpha & beta の設定 ---
     beta = 0.1 #@param {type:"slider", min:0.08, max:0.3, step:0.01}
 
-    alpha_range = 7
-    for count, alpha in enumerate(range(alpha_range)):
+    os.makedirs('smiled_movie', exist_ok=True)
+    image_name = os.path.splitext(os.path.basename(pt_name))[0]
+    output_dir = os.path.join("./smiled_movie/", image_name)
+    if os.path.isdir(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "output.mp4")
+
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    writer = cv2.VideoWriter(output_path, fourcc, 30.0, (1024, 1024))
+
+
+    alpha_range = 3.0
+    for count, alpha in enumerate(np.arange(0.0, alpha_range, 0.1)):
         M.alpha = [alpha]
         boundary_tmp2,c = GetBoundary(fs3,dt,M,threshold=beta)
         codes = M.MSCode(M.dlatents,boundary_tmp2)
         out = M.GenerateImg(codes)
         generated = Image.fromarray(out[0,0])#.resize((512,512))
 
-        image_name = os.path.splitext(os.path.basename(pt_name))[0]
-        output_dir = os.path.join("./smiled_movie/", image_name)
-        output_path = os.path.join(output_dir, str(count).zfill(5) + ".png")
-        generated.save(output_path)
+        cv_image = np.array(generated)
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        writer.write(cv_image)

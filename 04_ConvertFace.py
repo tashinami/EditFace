@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         # ランドマーク検出 & クロップ情報の取得
         lm = get_landmark(origin_image_path, predictor)
-        quad, crop, pad = get_align_info(lm, img)
+        quad, _, crop, pad = get_align_info(lm, img)
 
         # 笑顔変換した画像の読み込み
         smile_image = cv2.imread(smile_image_path)
