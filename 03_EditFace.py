@@ -1,3 +1,4 @@
+import os
 import gdown
 import numpy as np 
 from PIL import Image
@@ -10,10 +11,11 @@ from MapTS import GetFs,GetBoundary,GetDt
 from manipulate import Manipulator
 
 # 学習済みパラメータのダウンロード
-gdown.download('https://drive.google.com/u/1/uc?id=13CCGLcCw6_GMHe8cUBiaLlORzEK4gwso', 'data_sc.zip', quiet=False)
-with ZipFile("data_sc.zip", 'r') as zip:
-    zip.extractall() 
-
+model_path = 'data_sc.zip'  
+if not os.path.exists(model_path):
+    gdown.download('https://drive.google.com/u/1/uc?id=13CCGLcCw6_GMHe8cUBiaLlORzEK4gwso', model_path, quiet=False)
+    with ZipFile("data_sc.zip", 'r') as zip:
+        zip.extractall() 
 
 # CLIP
 device = "cuda" if torch.cuda.is_available() else "cpu"

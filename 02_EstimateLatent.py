@@ -16,11 +16,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 # モデルのダウンロード
+model_path = 'pretrained_models/e4e_ffhq_encode.pt'  
 os.makedirs('pretrained_models', exist_ok=True)
-gdown.download('https://drive.google.com/u/1/uc?id=1Du_8FzOPKJhk6aJmiOBhAWVe3_6vAyET', 'pretrained_models/e4e_ffhq_encode.pt', quiet=False)
+if not os.path.exists(model_path):
+    gdown.download('https://drive.google.com/u/1/uc?id=1Du_8FzOPKJhk6aJmiOBhAWVe3_6vAyET', model_path, quiet=False)
 
 # モデルの読み込み
-model_path = 'pretrained_models/e4e_ffhq_encode.pt'  
 ckpt = torch.load(model_path, map_location='cpu')
 opts = ckpt['opts']
 opts['checkpoint_path'] = model_path
