@@ -1,15 +1,10 @@
 
-
-
-# # 5.ランドマークデータのダウンロード
-# !wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
-# !bzip2 -dk shape_predictor_68_face_landmarks.dat.bz2
-
-
 # --- 顔画像の切り出し ---
 import os
+import glob
 import shutil
 from tqdm import tqdm
+from itertools import chain
 
 import dlib
 from utils.alignment import align_face
@@ -25,10 +20,14 @@ if __name__ == "__main__":
       shutil.rmtree('align')
   os.makedirs('align', exist_ok=True)
 
-  files = sorted(os.listdir('./images'))
-  for i, file in enumerate(tqdm(files)):
-    if file=='.ipynb_checkpoints':
-      continue
-    input_image = run_alignment('./images/'+file)
+  ext_list = ["jpg", "png", "jpeg"]
+  image_list = sorted(list(chain.from_iterable([glob.glob(os.path.join("./images", "*." + ext)) for ext in ext_list])))
+
+  for i, file in enumerate(tqdm(image_list)):
+    input_image = run_alignment(file)
     input_image.resize((256,256))
-    input_image.save('./align/'+file)
+
+    image_name = os.path.splitext(os.path.basename(file))[0]
+    image_name += ".png"
+    output_path = os.path.join("./align/", image_name)
+    input_image.save(output_path)

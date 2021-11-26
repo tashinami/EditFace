@@ -5,6 +5,8 @@ import scipy
 import scipy.ndimage
 import dlib
 
+output_size = 256
+transform_size = 256
 
 def get_landmark(filepath, predictor):
     """get landmark with dlib
@@ -25,15 +27,7 @@ def get_landmark(filepath, predictor):
     lm = np.array(a)
     return lm
 
-
-def align_face(filepath, predictor):
-    """
-    :param filepath: str
-    :return: PIL Image
-    """
-
-    lm = get_landmark(filepath, predictor)
-
+def get_align_info(lm, img):
     lm_chin = lm[0: 17]  # left-right
     lm_eyebrow_left = lm[17: 22]  # left-right
     lm_eyebrow_right = lm[22: 27]  # left-right
@@ -63,12 +57,6 @@ def align_face(filepath, predictor):
     quad = np.stack([c - x - y, c - x + y, c + x + y, c + x - y])
     qsize = np.hypot(*x) * 2
 
-    # read image
-    img = PIL.Image.open(filepath)
-
-    output_size = 256
-    transform_size = 256
-    enable_padding = True
 
     # Shrink.
     shrink = int(np.floor(qsize / output_size * 0.5))
@@ -93,6 +81,8 @@ def align_face(filepath, predictor):
            int(np.ceil(max(quad[:, 1]))))
     pad = (max(-pad[0] + border, 0), max(-pad[1] + border, 0), max(pad[2] - img.size[0] + border, 0),
            max(pad[3] - img.size[1] + border, 0))
+
+    enable_padding = True
     if enable_padding and max(pad) > border - 4:
         pad = np.maximum(pad, int(np.rint(qsize * 0.3)))
         img = np.pad(np.float32(img), ((pad[1], pad[3]), (pad[0], pad[2]), (0, 0)), 'reflect')
@@ -106,7 +96,22 @@ def align_face(filepath, predictor):
         img = PIL.Image.fromarray(np.uint8(np.clip(np.rint(img), 0, 255)), 'RGB')
         quad += pad[:2]
 
-    # Transform.
+    return quad, crop, pad
+
+
+
+def align_face(filepath, predictor):
+    """
+    :param filepath: str
+    :return: PIL Image
+    """
+    # read image
+    img = PIL.Image.open(filepath)
+
+    lm = get_landmark(filepath, predictor)
+    quad, _, _ = get_align_info(lm, img)
+
+    # アフィン変換
     img = img.transform((transform_size, transform_size), PIL.Image.QUAD, (quad + 0.5).flatten(), PIL.Image.BILINEAR)
     if output_size < transform_size:
         img = img.resize((output_size, output_size), PIL.Image.ANTIALIAS)
